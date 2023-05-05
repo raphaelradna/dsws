@@ -1,0 +1,129 @@
+{
+	"patcher" : 	{
+		"fileversion" : 1,
+		"appversion" : 		{
+			"major" : 8,
+			"minor" : 5,
+			"revision" : 4,
+			"architecture" : "x64",
+			"modernui" : 1
+		}
+,
+		"classnamespace" : "dsp.gen",
+		"rect" : [ 0.0, 45.0, 631.0, 721.0 ],
+		"bglocked" : 0,
+		"openinpresentation" : 0,
+		"default_fontsize" : 9.0,
+		"default_fontface" : 0,
+		"default_fontname" : "Geneva",
+		"gridonopen" : 1,
+		"gridsize" : [ 15.0, 15.0 ],
+		"gridsnaponopen" : 2,
+		"objectsnaponopen" : 0,
+		"statusbarvisible" : 2,
+		"toolbarvisible" : 1,
+		"lefttoolbarpinned" : 2,
+		"toptoolbarpinned" : 2,
+		"righttoolbarpinned" : 2,
+		"bottomtoolbarpinned" : 1,
+		"toolbars_unpinned_last_save" : 7,
+		"tallnewobj" : 0,
+		"boxanimatetime" : 200,
+		"enablehscroll" : 1,
+		"enablevscroll" : 1,
+		"devicewidth" : 0.0,
+		"description" : "",
+		"digest" : "",
+		"tags" : "",
+		"style" : "",
+		"subpatcher_template" : "classic",
+		"assistshowspatchername" : 0,
+		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-2",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 60.0, 690.0, 32.0, 20.0 ],
+					"text" : "out 2"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"code" : "/* ======================================== /*\n\n\tDYNAMIC STOCHASTIC WAVETABLE SYNTHESIS\n\tRAPHAEL RADNA\n\tTHIS CODE IS LICENSED UNDER THE GPLv3.\n\tCOPYRIGHT © 2023. ALL RIGHTS RESERVED.\n\n/* ======================================== */\n\nBuffer table(\"table\");\nBuffer dsws(\"dsws\");\n\nData delta(256, 2);\n\nParam pitch(57.0);\nParam segments(16, max=256, min=1);\nParam pitchMode(1, min=0);\nParam pitchStep(0.1, min=0);\nParam pitchBarrier(12.0, min=0);\nParam ampStep(0.1, max=1, min=0);\nParam ampBarrier(0.1, max=1, min=0);\nParam freeze(0, min=0);\n\nHistory phase(0);\nHistory clear(0);\nHistory _segIndex(0);\nHistory _a0(0);\n\nif (clear > 0) {\n\tfor (i = 0; i < 256; i += 1) {\n\t\tpoke(delta, 0, i, 0, 0, index=\"samples\");\n\t\tpoke(delta, 0, i, 1, 0, index=\"samples\");\n\t}\n\tclear = 0;\n}\n\nsampIndex = phase * dim(table);\nsampsPerSeg = dim(table) / segments;\nsegIndex = floor(sampIndex / sampsPerSeg);\npitchSegIndex = segIndex * (pitchMode < 1);\n\nsegPitch = peek(delta, pitchSegIndex, 0, channels=2, index=\"samples\");\nincrement = mtof(pitch + segPitch) / samplerate;\n\ncalcSeg = (phase + increment) >= 1 / segments * (segIndex + 1);\nif (calcSeg && !freeze) {\n    if ((pitchMode && segIndex == 0) || !pitchMode) {\n        segPitch = peek(delta, pitchSegIndex, 0, channels=1, index=\"samples\");\n        nextPitchStep = noise() * pitchStep;\n        pitchReflect = fold(segPitch + nextPitchStep, pitchBarrier * -1, pitchBarrier);\n        poke(delta, pitchReflect, pitchSegIndex, 0, 0, index=\"samples\");\n    }\n\t\n\tsegAmp = peek(delta, segIndex, 1, channels=1, index=\"samples\");\n\tif (!segIndex) _a0 = segAmp;\n\tnextAmpStep = noise() * ampStep;\n\tampReflect = fold(segAmp + nextAmpStep, ampBarrier * -1, ampBarrier);\n\tpoke(delta, ampReflect, segIndex, 1, 0, index=\"samples\");\n\n\tsampSegStart = _segIndex * sampsPerSeg;\n\tfor (i = 0; i < sampsPerSeg; i += 1) {\n\t\tsampWriteIndex = sampSegStart + i;\n\t\tsamp = peek(table, sampWriteIndex, 0, channels=1, index=\"samples\");\n\t\t\n\t\t_segAmp = (segments > 1) ? peek(delta, _segIndex, 1, channels=1, index=\"samples\") : _a0;\n\t\tsegAmp = peek(delta, segIndex, 1, channels=1, index=\"samples\");\n\t\t\n\t\tampdelta = scale(i, 0, sampsPerSeg, _segAmp, segAmp, 1);\n\t\tnewSamp = fold(samp + ampdelta, -1, 1);\n\t\tpoke(dsws, newSamp, sampWriteIndex, 0, 0, index=\"samples\");\n\t}\n\t_segIndex = segIndex;\n}\n\nout1 = wave(dsws, phase, 0, index=\"phase\", channels=1);\nout2 = mtof(pitch + segPitch);\n\nphase += increment;\nwhile (phase > 1.0) phase -= 1.0;",
+					"fontface" : 0,
+					"fontname" : "<Monospaced>",
+					"fontsize" : 9.0,
+					"id" : "obj-5",
+					"maxclass" : "codebox",
+					"numinlets" : 1,
+					"numoutlets" : 2,
+					"outlettype" : [ "", "" ],
+					"patching_rect" : [ 15.0, 45.0, 600.0, 630.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-1",
+					"maxclass" : "newobj",
+					"numinlets" : 0,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 15.0, 15.0, 25.0, 20.0 ],
+					"text" : "in 1"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-4",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 15.0, 690.0, 32.0, 20.0 ],
+					"text" : "out 1"
+				}
+
+			}
+ ],
+		"lines" : [ 			{
+				"patchline" : 				{
+					"destination" : [ "obj-5", 0 ],
+					"source" : [ "obj-1", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-2", 0 ],
+					"midpoints" : [ 605.5, 682.0, 69.5, 682.0 ],
+					"source" : [ "obj-5", 1 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-4", 0 ],
+					"source" : [ "obj-5", 0 ]
+				}
+
+			}
+ ],
+		"default_bgcolor" : [ 0.800000011920929, 0.800000011920929, 0.800000011920929, 1.0 ],
+		"color" : [ 0.999996185302734, 0.99993908405304, 0.041033305227757, 1.0 ],
+		"elementcolor" : [ 0.400000005960464, 0.400000005960464, 0.400000005960464, 1.0 ],
+		"accentcolor" : [ 0.400000005960464, 0.400000005960464, 0.400000005960464, 1.0 ],
+		"textcolor" : [ 0.0, 0.0, 0.0, 1.0 ],
+		"textcolor_inverse" : [ 0.0, 0.0, 0.0, 1.0 ],
+		"patchlinecolor" : [ 0.0, 0.0, 0.0, 1.0 ],
+		"bgcolor" : [ 1.0, 1.0, 1.0, 1.0 ],
+		"editing_bgcolor" : [ 1.0, 1.0, 1.0, 1.0 ],
+		"bgfillcolor_type" : "color",
+		"bgfillcolor_color1" : [ 0.301961, 0.301961, 0.301961, 1.0 ],
+		"bgfillcolor_color2" : [ 0.2, 0.2, 0.2, 1.0 ],
+		"bgfillcolor_color" : [ 0.800000011920929, 0.800000011920929, 0.800000011920929, 1.0 ]
+	}
+
+}
